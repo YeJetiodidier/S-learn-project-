@@ -53,3 +53,7 @@ dkms.conf
 
 # debug information files
 *.dwo
+backend/node_modules/
+backend/.env
+backend/.git/
+backend/.git.backup/
