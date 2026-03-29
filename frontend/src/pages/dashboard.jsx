@@ -1,5 +1,6 @@
-import "../dashboard.css";
+import Sidebar from "../components/Sidebar";
 import { useLocation, useNavigate } from "react-router-dom";
+import "../dashboard.css";
 
 const subjectCards = [
   {
@@ -15,15 +16,23 @@ const subjectCards = [
     gradient: "linear-gradient(135deg, #f8b8d8, #f8d8a8)",
   },
   {
+    title: "Subjects",
+    desc: "Papers & Specialities",
+    img: "/books_card.png",
+    gradient: "linear-gradient(135deg, #4f46e5, #ec4899)",
+    action: "/subjects"
+  },
+  {
     title: "Schedule",
     desc: "Manage your timetable",
     img: "/schedule_card.png",
     gradient: "linear-gradient(135deg, #a8f0e8, #c8c8f8)",
+    action: "/schedule"
   },
 ];
 
 const quickStartItems = [
-  { icon: "🎓", label: "Exam", sub: "Practice papers" },
+  { icon: "🎓", label: "Exam", sub: "Practice papers", action: "/subjects" },
   { icon: "✍️", label: "Writing", sub: "Essay techniques" },
   { icon: "📖", label: "Reading", sub: "Comprehension" },
 ];
@@ -74,10 +83,10 @@ function Dashboard() {
   const specialty = location.state?.specialty || localStorage.getItem("specialty") || "";
 
   const navItems = [
-    { icon: "🏠", label: "Dashboard", active: true },
-    { icon: "🔍", label: "Explore", action: () => navigate("/explore") },
-    { icon: "📚", label: "Subjects", action: () => navigate("/subjects") },
-    { icon: "📅", label: "Schedule", action: () => navigate("/schedule") },
+    { icon: "🏠", label: "Dashboard", action: () => navigate("/dashboard"), active: location.pathname === "/dashboard" },
+    { icon: "🔍", label: "Explore", action: () => navigate("/explore"), active: location.pathname === "/explore" },
+    { icon: "📚", label: "Subjects", action: () => navigate("/subjects"), active: location.pathname.startsWith("/subjects") },
+    { icon: "📅", label: "Schedule", action: () => navigate("/schedule"), active: location.pathname === "/schedule" },
     { icon: "⚙️", label: "Settings" },
     { icon: "🚪", label: "Log Out", action: () => navigate("/register") },
   ];
@@ -86,25 +95,7 @@ function Dashboard() {
     <div className="db-layout">
 
       {/* ── SIDEBAR ── */}
-      <aside className="db-sidebar">
-        <div className="db-logo">
-          <span className="db-logo-icon">🔎</span>
-          <span className="db-logo-text">S-Learn</span>
-        </div>
-
-        <nav className="db-nav">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              className={`db-nav-item ${item.active ? "active" : ""}`}
-              onClick={item.action}
-            >
-              <span className="db-nav-icon">{item.icon}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-      </aside>
+      <Sidebar />
 
       {/* ── MAIN ── */}
       <main className="db-main">
@@ -112,8 +103,8 @@ function Dashboard() {
         {/* TOP BAR */}
         <div className="db-topbar">
           <div className="db-nav-arrows">
-            <button className="arrow-btn">‹</button>
-            <button className="arrow-btn">›</button>
+            <button className="arrow-btn" onClick={() => navigate(-1)}>‹</button>
+            <button className="arrow-btn" onClick={() => navigate(1)}>›</button>
           </div>
           <div className="db-search-wrap">
             <span className="search-icon">🔍</span>
@@ -137,13 +128,18 @@ function Dashboard() {
 
           <div className="db-subject-cards">
             {subjectCards.map((card) => (
-              <div key={card.title} className="db-subject-card" style={{ background: card.gradient }}>
+              <div 
+                key={card.title} 
+                className="db-subject-card" 
+                style={{ background: card.gradient, cursor: card.action ? "pointer" : "default" }}
+                onClick={() => card.action && navigate(card.action)}
+              >
                 <img src={card.img} alt={card.title} className="db-card-img" />
                 <div className="db-card-label">
                   <h3>{card.title}</h3>
                   <p>{card.desc}</p>
                 </div>
-                <button className="db-card-heart">♡</button>
+                <button className="db-card-heart" onClick={(e) => e.stopPropagation()}>♡</button>
               </div>
             ))}
           </div>
@@ -189,7 +185,12 @@ function Dashboard() {
         <div className="db-quickstart">
           <h3 className="db-qs-title">Quick Start</h3>
           {quickStartItems.map((item) => (
-            <div key={item.label} className="db-qs-item">
+            <div 
+              key={item.label} 
+              className="db-qs-item"
+              style={{ cursor: item.action ? "pointer" : "default" }}
+              onClick={() => item.action && navigate(item.action)}
+            >
               <span className="db-qs-icon">{item.icon}</span>
               <div>
                 <p className="db-qs-label">{item.label}</p>
