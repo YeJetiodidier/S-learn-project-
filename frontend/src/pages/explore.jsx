@@ -11,40 +11,16 @@ const exploreItems = [
   { icon: "💻", title: "Computer Science", desc: "Algorithms, Programming, Networks", color: "linear-gradient(135deg, #a8d8f8, #a8f8e8)" },
 ];
 
+import Sidebar from "../components/Sidebar";
+
 function Explore() {
   const navigate = useNavigate();
-
-  const navItems = [
-    { icon: "🏠", label: "Dashboard", action: () => navigate("/dashboard") },
-    { icon: "🔍", label: "Explore", active: true },
-    { icon: "📚", label: "Subjects", action: () => navigate("/subjects") },
-    { icon: "📅", label: "Schedule", action: () => navigate("/schedule") },
-    { icon: "⚙️", label: "Settings" },
-    { icon: "🚪", label: "Log Out", action: () => navigate("/register") },
-  ];
 
   return (
     <div className="db-layout">
 
       {/* SIDEBAR */}
-      <aside className="db-sidebar">
-        <div className="db-logo">
-          <span className="db-logo-icon">🔎</span>
-          <span className="db-logo-text">S-Learn</span>
-        </div>
-        <nav className="db-nav">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              className={`db-nav-item ${item.active ? "active" : ""}`}
-              onClick={item.action}
-            >
-              <span className="db-nav-icon">{item.icon}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-      </aside>
+      <Sidebar />
 
       {/* MAIN */}
       <main className="db-main">

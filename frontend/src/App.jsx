@@ -4,7 +4,7 @@ import Dashboard from "./pages/dashboard";
 import Login from "./components/login";
 import Schedule from "./components/schedule";
 import Explore from "./pages/explore";
-import Subjects from "./pages/subjects";
+import Subjects from "./pages/Subjects";
 
 function App() {
 
@@ -18,7 +18,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/schedule" element={<Schedule />} />
         <Route path="/explore" element={<Explore />} />
-        <Route path="/subjects" element={<Subjects />} />
+        <Route path="/subjects/*" element={<Subjects />} />
       </Routes>
 
     </BrowserRouter>
