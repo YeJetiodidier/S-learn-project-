@@ -22,28 +22,11 @@
   z-index: 10;
 }
 
-.db-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 8px;
-}
-
-.db-logo-icon {
-  font-size: 2rem;
-  background: linear-gradient(135deg, #818cf8, #38bdf8);
-  border-radius: 50%;
-  padding: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.db-logo-text {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: 0.5px;
+.db-logo-img {
+  width: 140px;
+  height: auto;
+  object-fit: contain;
+  padding: 0 4px;
 }
 
 .db-nav {
@@ -343,6 +326,14 @@
   justify-content: center;
   font-size: 2.2rem;
   box-shadow: 0 4px 16px rgba(251,146,60,0.2);
+}
+
+.db-avatar-img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
 
 .db-profile-name {

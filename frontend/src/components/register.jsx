@@ -44,8 +44,8 @@ function Register() {
       return;
     }
 
-    // Redirect to Dashboard on successful registration
-    navigate("/dashboard");
+    // Redirect to Loading Screen on successful registration
+    navigate("/loading");
   };
 
   return (

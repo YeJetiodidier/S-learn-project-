@@ -31,8 +31,8 @@ function Login() {
       return;
     }
 
-    // Navigate to dashboard on successful login
-    navigate("/dashboard");
+    // Navigate to loading screen on successful login
+    navigate("/loading");
   };
 
   return (

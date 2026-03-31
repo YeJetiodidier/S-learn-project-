@@ -1,26 +1,22 @@
 import Sidebar from "../components/Sidebar";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import "../dashboard.css";
 
 const subjectCards = [
   {
-    title: "Books & Library",
-    desc: "Explore reading materials",
-    img: "/books_card.png",
-    gradient: "linear-gradient(135deg, #a8c8f8, #c8b8f8)",
-  },
-  {
     title: "Science Lab",
-    desc: "Chemistry & Physics",
+    desc: "Chemistry & Physics Practicals",
     img: "/science_card.png",
     gradient: "linear-gradient(135deg, #f8b8d8, #f8d8a8)",
+    action: "/sciencelab"
   },
   {
-    title: "Subjects",
+    title: "Smart Subjects",
     desc: "Papers & Specialities",
     img: "/books_card.png",
     gradient: "linear-gradient(135deg, #4f46e5, #ec4899)",
-    action: "/subjects"
+    action: "/smartsubjects"
   },
   {
     title: "Schedule",
@@ -37,10 +33,7 @@ const quickStartItems = [
   { icon: "📖", label: "Reading", sub: "Comprehension" },
 ];
 
-const stats = [
-  { label: "Lessons Completed", value: 24 },
-  { label: "Topics Studied", value: 8 },
-];
+// dynamic stats hook handles this now
 
 function StatChart() {
   const points = [
@@ -79,13 +72,34 @@ function Dashboard() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const level = location.state?.level || localStorage.getItem("level") || "S-Learn";
-  const specialty = location.state?.specialty || localStorage.getItem("specialty") || "";
+  const fallbackLevel = location.state?.level || localStorage.getItem("level") || "S-Learn";
+  const fallbackSpecialty = location.state?.specialty || localStorage.getItem("specialty") || "";
+
+  const [profile, setProfile] = useState({
+    username: fallbackLevel,
+    role: fallbackSpecialty || "Student",
+    avatar_url: "",
+    lessons_completed: 24,
+    topics_studied: 8
+  });
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/profile")
+      .then(res => res.json())
+      .then(data => {
+        if (data && !data.error) setProfile(data);
+      })
+      .catch(err => console.error("Could not load profile stats:", err));
+  }, []);
+
+  const stats = [
+    { label: "Lessons Completed", value: profile.lessons_completed },
+    { label: "Topics Studied", value: profile.topics_studied },
+  ];
 
   const navItems = [
     { icon: "🏠", label: "Dashboard", action: () => navigate("/dashboard"), active: location.pathname === "/dashboard" },
-    { icon: "🔍", label: "Explore", action: () => navigate("/explore"), active: location.pathname === "/explore" },
-    { icon: "📚", label: "Subjects", action: () => navigate("/subjects"), active: location.pathname.startsWith("/subjects") },
+    { icon: "📚", label: "Smart Subjects", action: () => navigate("/smartsubjects"), active: location.pathname.startsWith("/smartsubjects") },
     { icon: "📅", label: "Schedule", action: () => navigate("/schedule"), active: location.pathname === "/schedule" },
     { icon: "⚙️", label: "Settings" },
     { icon: "🚪", label: "Log Out", action: () => navigate("/register") },
@@ -127,21 +141,37 @@ function Dashboard() {
           </div>
 
           <div className="db-subject-cards">
-            {subjectCards.map((card) => (
-              <div 
-                key={card.title} 
-                className="db-subject-card" 
-                style={{ background: card.gradient, cursor: card.action ? "pointer" : "default" }}
-                onClick={() => card.action && navigate(card.action)}
-              >
-                <img src={card.img} alt={card.title} className="db-card-img" />
-                <div className="db-card-label">
-                  <h3>{card.title}</h3>
-                  <p>{card.desc}</p>
+            {subjectCards.map((card) => {
+              const cardContent = (
+                <>
+                  <img src={card.img} alt={card.title} className="db-card-img" />
+                  <div className="db-card-label">
+                    <h3>{card.title}</h3>
+                    <p>{card.desc}</p>
+                  </div>
+                  <button className="db-card-heart" onClick={(e) => e.preventDefault()}>♡</button>
+                </>
+              );
+
+              return card.action ? (
+                <Link
+                  key={card.title}
+                  to={card.action}
+                  className="db-subject-card"
+                  style={{ background: card.gradient, cursor: "pointer", textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}
+                >
+                  {cardContent}
+                </Link>
+              ) : (
+                <div
+                  key={card.title}
+                  className="db-subject-card"
+                  style={{ background: card.gradient }}
+                >
+                  {cardContent}
                 </div>
-                <button className="db-card-heart" onClick={(e) => e.stopPropagation()}>♡</button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -168,9 +198,13 @@ function Dashboard() {
 
         {/* PROFILE */}
         <div className="db-profile-card">
-          <div className="db-avatar">🧑‍🎓</div>
-          <h3 className="db-profile-name">{level}</h3>
-          <p className="db-profile-sub">{specialty || "Student"}</p>
+          {profile.avatar_url ? (
+            <img src={profile.avatar_url} alt="Profile" className="db-avatar-img" />
+          ) : (
+            <div className="db-avatar">🧑‍🎓</div>
+          )}
+          <h3 className="db-profile-name">{profile.username}</h3>
+          <p className="db-profile-sub">{profile.role}</p>
           <div className="db-profile-stats">
             {stats.map((s) => (
               <div key={s.label} className="db-profile-stat">

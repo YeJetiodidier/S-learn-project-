@@ -3,8 +3,10 @@ import RegisterPage from "./pages/RegisterPage";
 import Dashboard from "./pages/dashboard";
 import Login from "./components/login";
 import Schedule from "./components/schedule";
-import Explore from "./pages/explore";
-import Subjects from "./pages/Subjects";
+import SmartSubjects from "./pages/SmartSubjects";
+import ScienceLab from "./pages/ScienceLab";
+import Settings from "./pages/Settings";
+import LoadingScreen from "./pages/LoadingScreen";
 
 function App() {
 
@@ -17,8 +19,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/schedule" element={<Schedule />} />
-        <Route path="/explore" element={<Explore />} />
-        <Route path="/subjects/*" element={<Subjects />} />
+        <Route path="/smartsubjects" element={<SmartSubjects />} />
+        <Route path="/sciencelab" element={<ScienceLab />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/loading" element={<LoadingScreen />} />
       </Routes>
 
     </BrowserRouter>

@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Sidebar from "./Sidebar";
+import "../dashboard.css";
 import "../App.css";
 
 function Schedule() {
@@ -45,21 +47,27 @@ function Schedule() {
   };
 
   return (
-    <div className="dashboard-layout">
+    <div className="db-layout">
 
       {/* SIDEBAR */}
-      <div className="sidebar">
-        <h2 className="logo">S-Learn</h2>
-        <ul>
-          <li onClick={() => navigate("/dashboard")} style={{ cursor: "pointer" }}>🏠 Dashboard</li>
-          <li style={{ opacity: 1, fontWeight: "bold" }}>📅 Schedule</li>
-          <li style={{ cursor: "pointer" }}>📚 Subjects</li>
-          <li onClick={() => navigate("/register")} style={{ cursor: "pointer" }}>🚪 Logout</li>
-        </ul>
-      </div>
+      <Sidebar />
 
       {/* MAIN */}
-      <div className="main">
+      <main className="db-main">
+        <div className="db-topbar">
+          <div className="db-nav-arrows">
+            <button className="arrow-btn" onClick={() => navigate(-1)}>‹</button>
+            <button className="arrow-btn" onClick={() => navigate(1)}>›</button>
+          </div>
+          <div className="db-search-wrap">
+            <span className="search-icon">📅</span>
+            <input type="text" className="db-search" placeholder="Search schedule..." />
+          </div>
+          <div className="db-topbar-actions">
+            <button className="icon-btn">🔔</button>
+            <button className="icon-btn">👤</button>
+          </div>
+        </div>
 
         <h2 className="page-title">My Study Schedule</h2>
 
@@ -110,7 +118,7 @@ function Schedule() {
 
         </div>
 
-      </div>
+      </main>
     </div>
   );
 }

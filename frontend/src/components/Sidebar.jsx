@@ -8,18 +8,17 @@ const Sidebar = () => {
 
   const navItems = [
     { icon: "🏠", label: "Dashboard", action: () => navigate("/dashboard"), active: location.pathname === "/dashboard" },
-    { icon: "🔍", label: "Explore", action: () => navigate("/explore"), active: location.pathname === "/explore" },
-    { icon: "📚", label: "Subjects", action: () => navigate("/subjects"), active: location.pathname.startsWith("/subjects") },
+    { icon: "📚", label: "Smart Subjects", action: () => navigate("/smartsubjects"), active: location.pathname.startsWith("/smartsubjects") },
+    { icon: "🔬", label: "Science Lab", action: () => navigate("/sciencelab"), active: location.pathname === "/sciencelab" },
     { icon: "📅", label: "Schedule", action: () => navigate("/schedule"), active: location.pathname === "/schedule" },
-    { icon: "⚙️", label: "Settings" },
+    { icon: "⚙️", label: "Settings", action: () => navigate("/settings"), active: location.pathname === "/settings" },
     { icon: "🚪", label: "Log Out", action: () => navigate("/register") },
   ];
 
   return (
     <aside className="db-sidebar">
       <div className="db-logo">
-        <span className="db-logo-icon">🔎</span>
-        <span className="db-logo-text">S-Learn</span>
+        <img src="/slearn_logo.png" alt="S-Learn Logo" className="db-logo-img" />
       </div>
 
       <nav className="db-nav">
