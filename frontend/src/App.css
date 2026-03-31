@@ -176,42 +176,16 @@
   z-index: 100;
 }
 
-.skel-brand-logo-img {
-  width: 120px;
+.skel-logo-img {
+  width: 140px;
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 8px 24px rgba(129, 140, 248, 0.5));
-  animation: floatLogo 2s ease-in-out infinite;
+  padding: 0 4px;
 }
 
 @keyframes floatLogo {
   0%, 100% { transform: translateY(0); }
   50%       { transform: translateY(-8px); }
-}
-
-.skel-brand-name {
-  font-size: 1.8rem;
-  font-weight: 900;
-  color: #1e293b;
-  letter-spacing: -0.5px;
-  margin-top: 10px;
-}
-
-.skel-pulse-ring {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  border: 3px solid rgba(129, 140, 248, 0.4);
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation: pulseRing 1.6s ease-out infinite;
-}
-
-@keyframes pulseRing {
-  0%   { transform: translate(-50%, -50%) scale(0.7); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
 }
 
 

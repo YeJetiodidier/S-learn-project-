@@ -17,8 +17,7 @@ function LoadingScreen() {
       {/* SIDEBAR SKELETON */}
       <aside className="skel-sidebar">
         <div className="skel-logo">
-          <div className="skel-block skel-round" style={{ width: 36, height: 36 }} />
-          <div className="skel-block" style={{ width: 80, height: 16 }} />
+          <img src="/slearn_logo.png" alt="S-Learn" className="skel-logo-img" />
         </div>
 
         <nav className="skel-nav">
@@ -100,13 +99,6 @@ function LoadingScreen() {
           ))}
         </div>
       </aside>
-
-      {/* OVERLAY BRAND */}
-      <div className="skel-brand-overlay">
-        <img src="/slearn_logo.png" alt="S-Learn" className="skel-brand-logo-img" />
-        <div className="skel-brand-name">S-Learn</div>
-        <div className="skel-pulse-ring" />
-      </div>
 
     </div>
   );
