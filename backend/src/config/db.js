@@ -4,7 +4,13 @@ dotenv.config();
 
 const { Pool } = pkg;
 
-let pool = null;
+const isLocal = process.env.DATABASE_URL && process.env.DATABASE_URL.includes("localhost");
+const useSSL = process.env.DATABASE_URL && !isLocal ? { rejectUnauthorized: false } : false;
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: useSSL
+});
 
 const connectDB = () => {
     if (!process.env.DATABASE_URL) {
@@ -12,23 +18,14 @@ const connectDB = () => {
         return;
     }
 
-    try {
-        pool = new Pool({
-            connectionString: process.env.DATABASE_URL,
-            ssl: { rejectUnauthorized: false } // Required for most online providers
-        });
-
-        // Test the connection
-        pool.query('SELECT NOW()', (err, res) => {
-            if (err) {
-                console.error("PostgreSQL connection failed:", err.message);
-            } else {
-                console.log("PostgreSQL connected successfully ✅");
-            }
-        });
-    } catch(err) {
-        console.error("Failed to initialize PostgreSQL pool:", err.message);
-    }
+    // Simple test query on startup
+    pool.query('SELECT NOW()', (err, res) => {
+        if (err) {
+            console.error("PostgreSQL connection failed:", err.message);
+        } else {
+            console.log("PostgreSQL connected successfully ✅");
+        }
+    });
 };
 
 export { pool };
