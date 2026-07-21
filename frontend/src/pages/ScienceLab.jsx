@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
+import { getVideos, addVideo } from "../firebase/firestoreService";
+import { uploadVideoFile } from "../firebase/storageService";
 import "../dashboard.css";
 import "../App.css";
 
@@ -7,35 +9,48 @@ function ScienceLab() {
   const [videos, setVideos] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newVideo, setNewVideo] = useState({ title: "", subject: "", description: "", video_url: "" });
+  const [videoFile, setVideoFile] = useState(null);
   const [filter, setFilter] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchVideos = async () => {
+    try {
+      const data = await getVideos();
+      setVideos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Could not load videos:", err);
+    }
+  };
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/videos")
-      .then(res => res.json())
-      .then(data => setVideos(Array.isArray(data) ? data : []))
-      .catch(err => console.error("Could not load videos:", err));
+    fetchVideos();
   }, []);
 
   const handleAddVideo = async () => {
-    if (!newVideo.title || !newVideo.video_url) {
-      return alert("Please fill in at least a Title and Video URL!");
+    if (!newVideo.title || (!newVideo.video_url && !videoFile)) {
+      return alert("Please fill in at least a Title and a Video URL or file!");
     }
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
-      const res = await fetch("http://localhost:5000/api/videos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newVideo)
-      });
-      if (res.ok) {
-        const added = await res.json();
-        setVideos([added, ...videos]);
-        setIsModalOpen(false);
-        setNewVideo({ title: "", subject: "", description: "", video_url: "" });
-      } else {
-        alert("Upload failed! Is the backend server running with DATABASE_URL set?");
+      let url = newVideo.video_url;
+      if (videoFile) {
+        url = await uploadVideoFile(videoFile, newVideo.title);
       }
-    } catch {
-      alert("Network Error: Is the backend server running?");
+      await addVideo({
+        title: newVideo.title,
+        subject: newVideo.subject,
+        description: newVideo.description,
+        video_url: url,
+      });
+      await fetchVideos();
+      setIsModalOpen(false);
+      setNewVideo({ title: "", subject: "", description: "", video_url: "" });
+      setVideoFile(null);
+    } catch (err) {
+      alert("Upload failed: " + (err?.message || err));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -129,16 +144,20 @@ function ScienceLab() {
         <div className="ss-modal-overlay">
           <div className="ss-modal">
             <h2>Upload Practical Video</h2>
-            <p>Add a new lab video — YouTube links and direct video URLs are both supported.</p>
+            <p style={{color: "#334155"}}>Add a new lab video — YouTube links and direct video URLs are both supported.</p>
             <div className="ss-modal-grid">
               <input type="text" placeholder="Video Title *" value={newVideo.title} onChange={e => setNewVideo({...newVideo, title: e.target.value})} />
               <input type="text" placeholder="Subject (e.g. Chemistry)" value={newVideo.subject} onChange={e => setNewVideo({...newVideo, subject: e.target.value})} />
               <input type="text" placeholder="Video URL or YouTube link *" value={newVideo.video_url} onChange={e => setNewVideo({...newVideo, video_url: e.target.value})} style={{gridColumn: "1/-1"}} />
-              <textarea placeholder="Brief description (optional)" value={newVideo.description} onChange={e => setNewVideo({...newVideo, description: e.target.value})} style={{gridColumn: "1/-1", padding: "14px 18px", borderRadius: "12px", border: "2px solid #e2e8f0", background: "#f8fafc", fontSize: "1rem", resize: "vertical", minHeight: "80px", boxSizing: "border-box"}} />
+              <input type="file" accept="video/*" style={{gridColumn: "1/-1", padding: "10px" }} onChange={e => setVideoFile(e.target.files[0] || null)} />
+              <textarea placeholder="Brief description (optional)" value={newVideo.description} onChange={e => setNewVideo({...newVideo, description: e.target.value})} style={{gridColumn: "1/-1", padding: "14px 18px", borderRadius: "12px", border: "2px solid #e2e8f0", background: "#f8fafc", color: "#1e293b", fontSize: "1rem", resize: "vertical", minHeight: "80px", boxSizing: "border-box"}} />
+
             </div>
             <div className="ss-modal-actions">
               <button className="ss-cancel-btn" onClick={() => setIsModalOpen(false)}>Cancel</button>
-              <button className="ss-action-btn" onClick={handleAddVideo}>Upload Video</button>
+              <button className="ss-action-btn" onClick={handleAddVideo} disabled={isSubmitting}>
+                {isSubmitting ? "Uploading..." : "Upload Video"}
+              </button>
             </div>
           </div>
         </div>

@@ -1,6 +1,8 @@
 import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
+import { getProfile } from "../firebase/firestoreService";
+import { getCurrentUser, logoutUser } from "../firebase/authService";
 import "../dashboard.css";
 
 const subjectCards = [
@@ -25,6 +27,13 @@ const subjectCards = [
     gradient: "linear-gradient(135deg, #a8f0e8, #c8c8f8)",
     action: "/schedule"
   },
+  {
+    title: "Exam",
+    desc: "Practice exam questions",
+    img: "/exam_card.png",
+    gradient: "linear-gradient(135deg, #ff7e5f, #feb47b)",
+    action: "/exam"
+  },
 ];
 
 const quickStartItems = [
@@ -35,12 +44,17 @@ const quickStartItems = [
 
 // dynamic stats hook handles this now
 
-function StatChart() {
+function StatChart({ lessons }) {
+  // Invert Y axis: 100 is bottom, 0 is top
+  const safeLessons = Math.min(Math.max(lessons || 0, 5), 100);
+  const endY = 100 - safeLessons;
+
+  // Calculate dynamic paths leading up to their current lessons
   const points = [
-    [0, 70], [40, 40], [80, 60], [120, 30], [160, 55], [200, 25], [240, 50],
+    [0, 80], [40, 75], [80, 60], [120, 50], [160, 45], [200, Math.min(endY + 10, 80)], [240, endY],
   ];
   const points2 = [
-    [0, 85], [40, 55], [80, 75], [120, 45], [160, 70], [200, 40], [240, 65],
+    [0, 95], [40, 80], [80, 85], [120, 75], [160, 80], [200, 60], [240, Math.min(endY + 20, 90)],
   ];
   const toPath = (pts) => pts.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x},${y}`).join(" ");
 
@@ -48,7 +62,7 @@ function StatChart() {
     <svg viewBox="0 0 250 100" className="stat-chart" preserveAspectRatio="none">
       <defs>
         <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#818cf8" stopOpacity="0.3" />
+          <stop offset="0%" stopColor="#818cf8" stopOpacity="0.4" />
           <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
         </linearGradient>
         <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
@@ -56,14 +70,33 @@ function StatChart() {
           <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={`${toPath(points)} L240,100 L0,100 Z`} fill="url(#g1)" />
-      <path d={`${toPath(points)} `} fill="none" stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" />
-      <path d={`${toPath(points2)} L240,100 L0,100 Z`} fill="url(#g2)" />
-      <path d={`${toPath(points2)}`} fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" />
+
+      <path d={`${toPath(points)} L240,100 L0,100 Z`} fill="url(#g1)" className="fade-in-dot" style={{ animationDelay: '0.5s' }} />
+      <path
+        d={`${toPath(points)}`}
+        fill="none"
+        stroke="#818cf8"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        className="anim-path"
+      />
+
+      <path d={`${toPath(points2)} L240,100 L0,100 Z`} fill="url(#g2)" className="fade-in-dot" style={{ animationDelay: '0.8s' }} />
+      <path
+        d={`${toPath(points2)}`}
+        fill="none"
+        stroke="#38bdf8"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        className="anim-path-delay"
+      />
+
       {/* Tooltip dot */}
-      <circle cx="120" cy="30" r="5" fill="#818cf8" />
-      <rect x="95" y="10" width="58" height="20" rx="6" fill="#1e293b" />
-      <text x="124" y="21" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">4.5 Points</text>
+      <circle cx="240" cy={endY} r="5" fill="#818cf8" className="fade-in-dot" />
+      <rect x="180" y={Math.max(endY - 25, 0)} width="65" height="20" rx="6" fill="#1e293b" className="fade-in-dot" />
+      <text x="212" y={Math.max(endY - 14, 11)} textAnchor="middle" fill="white" fontSize="7" fontWeight="bold" className="fade-in-dot">
+        {lessons || 0} Lessons
+      </text>
     </svg>
   );
 }
@@ -84,10 +117,11 @@ function Dashboard() {
   });
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/profile")
-      .then(res => res.json())
+    const uid = getCurrentUser()?.uid;
+    if (!uid) return;
+    getProfile(uid)
       .then(data => {
-        if (data && !data.error) setProfile(data);
+        if (data) setProfile(data);
       })
       .catch(err => console.error("Could not load profile stats:", err));
   }, []);
@@ -97,12 +131,19 @@ function Dashboard() {
     { label: "Topics Studied", value: profile.topics_studied },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } catch {}
+    navigate("/login");
+  };
+
   const navItems = [
     { icon: "🏠", label: "Dashboard", action: () => navigate("/dashboard"), active: location.pathname === "/dashboard" },
     { icon: "📚", label: "Smart Subjects", action: () => navigate("/smartsubjects"), active: location.pathname.startsWith("/smartsubjects") },
     { icon: "📅", label: "Schedule", action: () => navigate("/schedule"), active: location.pathname === "/schedule" },
-    { icon: "⚙️", label: "Settings" },
-    { icon: "🚪", label: "Log Out", action: () => navigate("/register") },
+    { icon: "⚙️", label: "Settings", action: () => navigate("/settings"), active: location.pathname === "/settings" },
+    { icon: "🚪", label: "Log Out", action: handleLogout },
   ];
 
   return (
@@ -174,23 +215,14 @@ function Dashboard() {
             })}
           </div>
         </section>
-
-        {/* STATISTICS */}
         <section className="db-section">
           <div className="db-section-header">
-            <h2 className="db-section-title">Statistics</h2>
-            <div className="db-stat-year">
-              <button className="arrow-sm">‹</button>
-              <span>2025</span>
-              <button className="arrow-sm">›</button>
-            </div>
+            <h2 className="db-section-title">Your Progress</h2>
           </div>
-
-          <div className="db-stat-card">
-            <StatChart />
+          <div className="db-stat-card" style={{ padding: '24px', background: 'white', borderRadius: '16px' }}>
+            <StatChart lessons={profile.lessons_completed} />
           </div>
         </section>
-
       </main>
 
       {/* ── RIGHT PANEL ── */}
@@ -219,8 +251,8 @@ function Dashboard() {
         <div className="db-quickstart">
           <h3 className="db-qs-title">Quick Start</h3>
           {quickStartItems.map((item) => (
-            <div 
-              key={item.label} 
+            <div
+              key={item.label}
               className="db-qs-item"
               style={{ cursor: item.action ? "pointer" : "default" }}
               onClick={() => item.action && navigate(item.action)}

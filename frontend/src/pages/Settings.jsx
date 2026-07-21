@@ -1,5 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import { useSettings } from "../context/SettingsContext.jsx";
+import {
+  getProfile,
+  updateProfile,
+  getSettings,
+  updateSettings,
+} from "../firebase/firestoreService";
+import {
+  changePassword,
+  exportUserData,
+  logoutUser,
+  deleteAccount,
+  getCurrentUser,
+  mapAuthError,
+} from "../firebase/authService";
+import { uploadFile } from "../firebase/storageService";
 import "../dashboard.css";
 import "../App.css";
 
@@ -12,8 +29,12 @@ const TABS = [
 ];
 
 function Settings() {
+  const navigate = useNavigate();
+  const { applyAppearance } = useSettings();
   const [activeTab, setActiveTab] = useState("profile");
   const [saved, setSaved] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef(null);
 
   // Profile state
   const [profile, setProfile] = useState({
@@ -35,17 +56,18 @@ function Settings() {
     profileVisible: true, activityVisible: false, shareStats: true,
   });
 
-  // Load all settings from backend on mount
+  const uid = getCurrentUser()?.uid;
+
+  // Load all settings from Firestore on mount
   useEffect(() => {
-    fetch("http://localhost:5000/api/profile")
-      .then(r => r.json())
-      .then(d => { if (d && !d.error) setProfile(prev => ({ ...prev, ...d })); })
+    if (!uid) return;
+    getProfile(uid)
+      .then(d => { if (d) setProfile(prev => ({ ...prev, ...d })); })
       .catch(() => {});
 
-    fetch("http://localhost:5000/api/settings")
-      .then(r => r.json())
+    getSettings(uid)
       .then(d => {
-        if (!d || d.error) return;
+        if (!d) return;
         setAppearance({
           theme: d.theme || "light",
           accentColor: d.accent_color || "#8b5cf6",
@@ -66,53 +88,63 @@ function Settings() {
         });
       })
       .catch(() => {});
-  }, []);
+  }, [uid]);
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const url = await uploadFile(file, "avatar");
+      const updated = { ...profile, avatar_url: url };
+      setProfile(updated);
+      // Auto-save to Firestore so the image persists after refresh
+      if (uid) {
+        await updateProfile(uid, updated);
+        flash();
+      }
+    } catch (err) {
+      alert("Avatar upload failed: " + (err?.message || err));
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   const saveProfile = async () => {
+    if (!uid) return;
     try {
-      await fetch("http://localhost:5000/api/profile/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile)
-      });
+      await updateProfile(uid, profile);
     } catch {}
     flash();
   };
 
   const saveAppearance = async () => {
+    if (!uid) return;
     try {
-      await fetch("http://localhost:5000/api/settings/appearance", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          theme: appearance.theme,
-          accent_color: appearance.accentColor,
-          font_size: appearance.fontSize,
-          compact_mode: appearance.compactMode,
-        })
+      await updateSettings(uid, {
+        theme: appearance.theme,
+        accent_color: appearance.accentColor,
+        font_size: appearance.fontSize,
+        compact_mode: appearance.compactMode,
       });
+      // Apply immediately so the user sees the change without a reload
+      applyAppearance(appearance);
     } catch {}
     flash();
   };
 
   const saveNotifications = async () => {
+    if (!uid) return;
     try {
-      await fetch("http://localhost:5000/api/settings/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(notifs)
-      });
+      await updateSettings(uid, notifs);
     } catch {}
     flash();
   };
 
   const savePrivacy = async () => {
+    if (!uid) return;
     try {
-      await fetch("http://localhost:5000/api/settings/privacy", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(privacy)
-      });
+      await updateSettings(uid, privacy);
     } catch {}
     flash();
   };
@@ -120,6 +152,57 @@ function Settings() {
   const flash = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+  };
+
+  const handleChangePassword = async () => {
+    const current = prompt("Enter current password:");
+    if (!current) return;
+    const newPass = prompt("Enter new password:");
+    if (!newPass) return;
+    try {
+      await changePassword(current, newPass);
+      alert("Password changed successfully");
+    } catch (err) {
+      alert(mapAuthError(err));
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      const data = await exportUserData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `slearn-data-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      alert("Data exported successfully");
+    } catch {
+      alert("Error exporting data");
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await logoutUser();
+    } catch {}
+    navigate("/login");
+  };
+
+  const handleDeleteAccount = async () => {
+    const password = prompt("Enter your password to confirm account deletion:");
+    if (!password) return;
+    if (!confirm("Are you sure? This action cannot be undone.")) return;
+    try {
+      await deleteAccount();
+      alert("Account deleted");
+      navigate("/register");
+    } catch (err) {
+      alert(mapAuthError(err));
+    }
   };
 
   return (
@@ -169,6 +252,21 @@ function Settings() {
                   <div>
                     <p className="cfg-avatar-name">{profile.username}</p>
                     <p className="cfg-avatar-role">{profile.role}</p>
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={handleAvatarUpload}
+                    />
+                    <button
+                      className="cfg-outline-btn"
+                      style={{ marginTop: '8px', fontSize: '0.8rem', padding: '6px 16px' }}
+                      onClick={() => avatarInputRef.current?.click()}
+                      disabled={avatarUploading}
+                    >
+                      {avatarUploading ? 'Uploading…' : '📷 Change Photo'}
+                    </button>
                   </div>
                 </div>
 
@@ -180,10 +278,6 @@ function Settings() {
                   <div className="cfg-field">
                     <label>Role / Title</label>
                     <input type="text" value={profile.role} onChange={e => setProfile({...profile, role: e.target.value})} placeholder="e.g. Student, Teacher" />
-                  </div>
-                  <div className="cfg-field">
-                    <label>Avatar Image URL</label>
-                    <input type="text" value={profile.avatar_url} onChange={e => setProfile({...profile, avatar_url: e.target.value})} placeholder="https://..." />
                   </div>
                   <div className="cfg-field">
                     <label>Academic Level</label>
@@ -346,7 +440,7 @@ function Settings() {
                       <p className="cfg-account-label">Change Password</p>
                       <p className="cfg-account-sub">Update your login credentials</p>
                     </div>
-                    <button className="cfg-outline-btn">Change</button>
+                    <button className="cfg-outline-btn" onClick={handleChangePassword}>Change</button>
                   </div>
                   <div className="cfg-account-card">
                     <span className="cfg-account-icon">📦</span>
@@ -354,7 +448,7 @@ function Settings() {
                       <p className="cfg-account-label">Export My Data</p>
                       <p className="cfg-account-sub">Download all your schedule and study data</p>
                     </div>
-                    <button className="cfg-outline-btn">Export</button>
+                    <button className="cfg-outline-btn" onClick={handleExportData}>Export</button>
                   </div>
                   <div className="cfg-account-card">
                     <span className="cfg-account-icon">🚪</span>
@@ -362,7 +456,7 @@ function Settings() {
                       <p className="cfg-account-label">Sign Out</p>
                       <p className="cfg-account-sub">Log out of your current session</p>
                     </div>
-                    <button className="cfg-outline-btn">Sign Out</button>
+                    <button className="cfg-outline-btn" onClick={handleSignOut}>Sign Out</button>
                   </div>
                   <div className="cfg-account-card danger">
                     <span className="cfg-account-icon">🗑️</span>
@@ -370,7 +464,7 @@ function Settings() {
                       <p className="cfg-account-label">Delete Account</p>
                       <p className="cfg-account-sub">Permanently remove your account and all data</p>
                     </div>
-                    <button className="cfg-danger-btn">Delete</button>
+                    <button className="cfg-danger-btn" onClick={handleDeleteAccount}>Delete</button>
                   </div>
                 </div>
               </section>

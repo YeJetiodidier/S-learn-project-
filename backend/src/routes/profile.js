@@ -14,10 +14,18 @@ router.get("/", async (req, res) => {
                 username VARCHAR(100),
                 role VARCHAR(100),
                 avatar_url TEXT,
+                bio TEXT,
+                level VARCHAR(50),
+                specialty VARCHAR(50),
                 lessons_completed INT DEFAULT 0,
                 topics_studied INT DEFAULT 0
             )
         `);
+
+        // Ensure new columns exist even if the table was created earlier
+        await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT");
+        await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS level VARCHAR(50)");
+        await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS specialty VARCHAR(50)");
 
         const countRes = await pool.query("SELECT COUNT(*) FROM users");
         if (parseInt(countRes.rows[0].count) === 0) {
@@ -41,7 +49,7 @@ router.get("/", async (req, res) => {
 // Update profile
 router.post("/update", async (req, res) => {
     if (!pool) return res.status(503).json({ error: "Database not connected" });
-    const { username, role, avatar_url, lessons_completed, topics_studied } = req.body;
+    const { username, role, avatar_url, bio, level, specialty, lessons_completed, topics_studied } = req.body;
 
     try {
         const updateQuery = `
@@ -49,12 +57,15 @@ router.post("/update", async (req, res) => {
             SET username = COALESCE($1, username), 
                 role = COALESCE($2, role), 
                 avatar_url = COALESCE($3, avatar_url), 
-                lessons_completed = COALESCE($4, lessons_completed), 
-                topics_studied = COALESCE($5, topics_studied)
+                bio = COALESCE($4, bio), 
+                level = COALESCE($5, level), 
+                specialty = COALESCE($6, specialty), 
+                lessons_completed = COALESCE($7, lessons_completed), 
+                topics_studied = COALESCE($8, topics_studied)
             WHERE id = (SELECT id FROM users LIMIT 1)
             RETURNING *
         `;
-        const result = await pool.query(updateQuery, [username, role, avatar_url, lessons_completed, topics_studied]);
+        const result = await pool.query(updateQuery, [username, role, avatar_url, bio, level, specialty, lessons_completed, topics_studied]);
         res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: "Failed to update profile", details: err.message });

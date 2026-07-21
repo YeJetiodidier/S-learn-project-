@@ -594,7 +594,7 @@ button:hover {
 }
 
 .ss-hero {
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+  background: linear-gradient(135deg, #3b82f6, var(--accent), #ec4899);
   background-size: 200% 200%;
   animation: gradientFlow 6s ease infinite;
   padding: 50px 40px;
@@ -674,7 +674,7 @@ button:hover {
 }
 
 .ss-select:hover, .ss-select:focus {
-  border-color: #8b5cf6;
+  border-color: var(--accent);
   background: white;
   box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
   transform: translateY(-2px);
@@ -833,7 +833,7 @@ button:hover {
 }
 
 .ss-modal-grid input:focus {
-  border-color: #8b5cf6;
+  border-color: var(--accent);
   background: white;
   box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
 }
@@ -862,7 +862,7 @@ button:hover {
 
 /* ── SCIENCE LAB PAGE ── */
 .sl-hero {
-  background: linear-gradient(135deg, #f97316, #ec4899, #8b5cf6);
+  background: linear-gradient(135deg, #f97316, #ec4899, var(--accent));
   background-size: 200% 200%;
   animation: gradientFlow 8s ease infinite;
   padding: 36px 40px;
@@ -935,7 +935,7 @@ button:hover {
 }
 
 .sl-chip.active {
-  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  background: linear-gradient(135deg, #ec4899, var(--accent));
   color: white;
   border-color: transparent;
   box-shadow: 0 4px 12px rgba(236,72,153,0.3);
@@ -1234,14 +1234,14 @@ button:hover {
 .cfg-field input:focus,
 .cfg-field select:focus,
 .cfg-field textarea:focus {
-  border-color: #8b5cf6;
+  border-color: var(--accent);
   background: white;
   box-shadow: 0 0 0 4px rgba(139,92,246,0.12);
 }
 
 /* SAVE BUTTON */
 .cfg-save-btn {
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  background: linear-gradient(135deg, var(--accent), #6d28d9);
   color: white;
   border: none;
   padding: 14px 32px;
@@ -1279,7 +1279,7 @@ button:hover {
 }
 
 .cfg-radio-btn.active {
-  border-color: #8b5cf6;
+  border-color: var(--accent);
   background: linear-gradient(135deg, #ede9fe, #dbeafe);
   color: #6d28d9;
 }
@@ -1331,7 +1331,7 @@ button:hover {
 }
 
 .cfg-toggle.on {
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  background: linear-gradient(135deg, var(--accent), #6d28d9);
 }
 
 .cfg-toggle-knob {
@@ -1451,8 +1451,8 @@ button:hover {
 }
 
 .cfg-outline-btn:hover {
-  border-color: #8b5cf6;
-  color: #8b5cf6;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .cfg-danger-btn {
@@ -1471,4 +1471,91 @@ button:hover {
   background: #ef4444;
   color: white;
   border-color: #ef4444;
+}
+
+/* ── SETTINGS PAGE DARK THEME ── */
+[data-theme="dark"] .cfg-tabs,
+[data-theme="dark"] .cfg-panel {
+  background: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .cfg-tab {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .cfg-tab:hover {
+  background: #273449;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .cfg-tab.active {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(59, 130, 246, 0.15));
+  color: #c4b5fd;
+}
+
+[data-theme="dark"] .cfg-section-title,
+[data-theme="dark"] .cfg-avatar-name,
+[data-theme="dark"] .cfg-toggle-label,
+[data-theme="dark"] .cfg-account-label {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .cfg-section-desc,
+[data-theme="dark"] .cfg-avatar-role,
+[data-theme="dark"] .cfg-toggle-desc,
+[data-theme="dark"] .cfg-account-sub {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .cfg-field label {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .cfg-field input,
+[data-theme="dark"] .cfg-field select,
+[data-theme="dark"] .cfg-field textarea {
+  background: #0f172a;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .cfg-field input:focus,
+[data-theme="dark"] .cfg-field select:focus,
+[data-theme="dark"] .cfg-field textarea:focus {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .cfg-radio-btn,
+[data-theme="dark"] .cfg-toggle-row,
+[data-theme="dark"] .cfg-toggle-item,
+[data-theme="dark"] .cfg-account-card,
+[data-theme="dark"] .cfg-avatar-row {
+  background: #0f172a;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .cfg-radio-btn.active {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(59, 130, 246, 0.15));
+  color: #c4b5fd;
+}
+
+[data-theme="dark"] .cfg-color-swatch.active {
+  border-color: #e2e8f0;
+}
+
+[data-theme="dark"] .cfg-account-icon {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .cfg-outline-btn,
+[data-theme="dark"] .cfg-danger-btn {
+  background: #1e293b;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .cfg-account-card.danger {
+  background: #2a1414;
+  border-color: #7f1d1d;
 }

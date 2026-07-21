@@ -1,15 +1,25 @@
-;import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { onAuthChange } from "../firebase/authService";
 import "../App.css";
 
 function LoadingScreen() {
   const navigate = useNavigate();
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    // Show skeleton for 2.2s then go to dashboard
-    const timer = setTimeout(() => navigate("/dashboard", { replace: true }), 2200);
-    return () => clearTimeout(timer);
-  }, [navigate]);
+    // Wait for Firebase to resolve the current session, then route accordingly.
+    const unsub = onAuthChange((user) => {
+      if (checked) return;
+      setChecked(true);
+      if (user) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/login", { replace: true });
+      }
+    });
+    return () => unsub();
+  }, [navigate, checked]);
 
   return (
     <div className="skel-root">

@@ -1,10 +1,18 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { logoutUser } from "../firebase/authService";
 import "../dashboard.css";
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } catch {}
+    navigate("/login");
+  };
 
   const navItems = [
     { icon: "🏠", label: "Dashboard", action: () => navigate("/dashboard"), active: location.pathname === "/dashboard" },
@@ -12,7 +20,7 @@ const Sidebar = () => {
     { icon: "🔬", label: "Science Lab", action: () => navigate("/sciencelab"), active: location.pathname === "/sciencelab" },
     { icon: "📅", label: "Schedule", action: () => navigate("/schedule"), active: location.pathname === "/schedule" },
     { icon: "⚙️", label: "Settings", action: () => navigate("/settings"), active: location.pathname === "/settings" },
-    { icon: "🚪", label: "Log Out", action: () => navigate("/register") },
+    { icon: "🚪", label: "Log Out", action: handleLogout },
   ];
 
   return (
