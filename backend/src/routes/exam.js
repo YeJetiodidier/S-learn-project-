@@ -16,12 +16,12 @@ router.get('/topics', async (req, res) => {
     }
 });
 
-// POST /api/exam/generate  body: { subject, topic, count }
+// POST /api/exam/generate  body: { subject, topic, count, papers? }
 router.post('/generate', async (req, res) => {
-    const { subject, topic, count } = req.body;
+    const { subject, topic, count, papers } = req.body;
     if (!subject || !topic || !count) return res.status(400).json({ error: 'subject, topic, and count required' });
     try {
-        const questions = await generateExam({ subject, topic, count });
+        const questions = await generateExam({ subject, topic, count, papers: Array.isArray(papers) ? papers : [] });
         res.json({ questions });
     } catch (err) {
         console.error(err);

@@ -23,6 +23,11 @@ function LoadingScreen() {
 
   return (
     <div className="skel-root">
+      <div className="skel-brand-overlay" aria-live="polite">
+        <img src="/slearn_logo.png" alt="S-Learn Logo" className="skel-logo-img" />
+        <div className="skel-loading-title">Welcome to S-Learn</div>
+        <div className="skel-spinner" aria-hidden="true" />
+      </div>
 
       {/* SIDEBAR SKELETON */}
       <aside className="skel-sidebar">

@@ -1,37 +1,7 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getSettings } from "../firebase/firestoreService";
 import { getCurrentUser } from "../firebase/authService";
-
-const SettingsContext = createContext(null);
-
-// Map the stored font-size token to an actual root font size.
-const FONT_SIZE_MAP = {
-  small: "14px",
-  medium: "16px",
-  large: "18px",
-};
-
-// Resolve the effective theme (handles "system").
-function resolveTheme(theme) {
-  if (theme === "system") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-  return theme === "dark" ? "dark" : "light";
-}
-
-// Apply the appearance settings to the document root so they affect the whole app.
-export function applyAppearance(appearance) {
-  if (!appearance || typeof document === "undefined") return;
-  const root = document.documentElement;
-
-  root.setAttribute("data-theme", resolveTheme(appearance.theme));
-  root.style.setProperty("--accent", appearance.accentColor || "#8b5cf6");
-  root.style.setProperty(
-    "--base-font-size",
-    FONT_SIZE_MAP[appearance.fontSize] || "16px"
-  );
-  root.classList.toggle("compact", !!appearance.compactMode);
-}
+import { applyAppearance } from "../utils/applyAppearance.js";
 
 export function SettingsProvider({ children }) {
   const [appearance, setAppearance] = useState({
@@ -58,7 +28,9 @@ export function SettingsProvider({ children }) {
         if (active) setAppearance(next);
         applyAppearance(next);
       })
-      .catch(() => {});
+      .catch((error) => {
+        console.error("Could not load appearance settings:", error);
+      });
     return () => {
       active = false;
     };
@@ -79,15 +51,5 @@ export function SettingsProvider({ children }) {
     return () => mq.removeEventListener("change", handler);
   }, [appearance]);
 
-  return (
-    <SettingsContext.Provider
-      value={{ appearance, setAppearance, applyAppearance }}
-    >
-      {children}
-    </SettingsContext.Provider>
-  );
-}
-
-export function useSettings() {
-  return useContext(SettingsContext);
+  return children;
 }

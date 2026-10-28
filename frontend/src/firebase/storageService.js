@@ -1,9 +1,14 @@
 // Local Storage service — handles file uploads via Express backend to bypass billing issues with Firebase Storage.
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+import { getBackendUrl } from "../utils/backendConfig";
 
+const BACKEND_URL = getBackendUrl();
 
 // Uploads a File/Blob and returns a publicly accessible download URL.
 export const uploadFile = async (file, type, year = "") => {
+  if (!BACKEND_URL) {
+    throw new Error("The backend is not configured. Start the API server or set VITE_BACKEND_URL to a valid live backend.");
+  }
+
   const formData = new FormData();
   formData.append("file", file);
 
@@ -26,9 +31,9 @@ export const uploadFile = async (file, type, year = "") => {
 };
 
 // Convenience helper that builds a storage path for a paper PDF.
-export const uploadPaperFile = (file, year, subject) =>
+export const uploadPaperFile = (file, year) =>
   uploadFile(file, "paper", year);
 
 // Convenience helper that builds a storage path for a video file.
-export const uploadVideoFile = (file, title) =>
+export const uploadVideoFile = (file) =>
   uploadFile(file, "video");

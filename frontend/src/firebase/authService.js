@@ -13,7 +13,9 @@ import {
   confirmPasswordReset,
   onAuthStateChanged,
   GoogleAuthProvider,
+  FacebookAuthProvider,
   signInWithPopup,
+  fetchSignInMethodsForEmail,
 } from "firebase/auth";
 import { auth, db } from "./config";
 import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
@@ -39,8 +41,25 @@ export const registerUser = async (name, email, password) => {
   return user;
 };
 
-export const loginUser = (email, password) =>
-  signInWithEmailAndPassword(auth, email, password);
+export const loginUser = async (email, password) => {
+  const methods = await fetchSignInMethodsForEmail(auth, email);
+
+  if (methods.length > 0 && !methods.includes("password")) {
+    const providerName = methods[0] === "google.com"
+      ? "Google"
+      : methods[0] === "facebook.com"
+        ? "Facebook"
+        : methods[0];
+
+    const err = new Error(
+      `This account was created with ${providerName} sign-in. Please use the ${providerName} button to continue.`
+    );
+    err.code = "auth/account-uses-social-login";
+    throw err;
+  }
+
+  return signInWithEmailAndPassword(auth, email, password);
+};
 
 export const loginWithGoogle = async () => {
   const provider = new GoogleAuthProvider();
@@ -65,10 +84,43 @@ export const loginWithGoogle = async () => {
   return user;
 };
 
+export const loginWithFacebook = async () => {
+  const provider = new FacebookAuthProvider();
+  provider.setCustomParameters({ display: "popup" });
+  const cred = await signInWithPopup(auth, provider);
+  const user = cred.user;
+  const userRef = doc(db, "users", user.uid);
+  const snap = await getDoc(userRef);
+  if (!snap.exists()) {
+    await setDoc(userRef, {
+      username: user.displayName || user.email?.split("@")[0] || "Facebook User",
+      email: user.email || "",
+      role: "Student",
+      avatar_url: user.photoURL || "",
+      bio: "",
+      level: "",
+      specialty: "",
+      lessons_completed: 0,
+      topics_studied: 0,
+      createdAt: new Date().toISOString(),
+    });
+  }
+  return user;
+};
+
 export const logoutUser = () => signOut(auth);
 
+const getResetRedirectUrl = () => {
+  const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:5173";
+  return `${origin}/reset-password`;
+};
+
 // Password reset via Firebase email link (replaces the old phone/OTP flow).
-export const sendResetEmail = (email) => sendPasswordResetEmail(auth, email);
+export const sendResetEmail = (email) =>
+  sendPasswordResetEmail(auth, email, {
+    url: getResetRedirectUrl(),
+    handleCodeInApp: false,
+  });
 
 // Used by the ResetPassword page when the user lands with an oobCode in the URL.
 export const confirmResetPassword = async (oobCode, newPassword) => {
@@ -119,12 +171,20 @@ export const mapAuthError = (err) => {
   switch (code) {
     case "auth/invalid-email":
       return "Please enter a valid email address.";
+    case "auth/account-uses-social-login":
+      return "This account was created with Google/Facebook sign-in. Please use the Google or Facebook button to continue.";
     case "auth/user-not-found":
     case "auth/wrong-password":
     case "auth/invalid-credential":
       return "Invalid email or password.";
+    case "auth/account-exists-with-different-credential":
+      return "This account is already linked to another sign-in method.";
     case "auth/email-already-in-use":
       return "An account with this email already exists.";
+    case "auth/popup-blocked":
+      return "The sign-in popup was blocked. Please allow popups and try again.";
+    case "auth/popup-closed-by-user":
+      return "The sign-in window was closed before finishing. Please try again.";
     case "auth/weak-password":
       return "Password must be at least 6 characters long.";
     case "auth/requires-recent-login":

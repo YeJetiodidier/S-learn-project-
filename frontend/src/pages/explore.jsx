@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import "../dashboard.css";
 import "../App.css";
 
@@ -14,8 +13,6 @@ const exploreItems = [
 import Sidebar from "../components/Sidebar";
 
 function Explore() {
-  const navigate = useNavigate();
-
   return (
     <div className="db-layout">
 

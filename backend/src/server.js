@@ -35,9 +35,8 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Serve static documents from the /documents folder at the project root
-// __dirname = .../S-learn-project-/backend/src  →  ../../../documents = .../s-learn 2.1/documents
-app.use("/documents", express.static(path.join(__dirname, "../../../documents")));
+// Serve static documents from the project root documents folder so uploads and reads share the same source of truth.
+app.use("/documents", express.static(path.resolve(__dirname, "../../documents")));
 
 app.use("/api/papers", paperRoutes);
 app.use("/api/profile", profileRoutes);

@@ -7,9 +7,8 @@ import { fileURLToPath } from "url";
 const router = express.Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Target directory for uploads is the root documents directory
-// src/routes -> src -> backend -> S-learn-project- -> s-learn 2.1/documents
-const documentsDir = path.join(__dirname, "../../../../documents");
+// Target directory for uploads is the project root documents folder so uploads and view links resolve correctly in both local and deployed environments.
+const documentsDir = path.resolve(__dirname, "../../../documents");
 
 // Ensure the base directory exists
 if (!fs.existsSync(documentsDir)) {
@@ -62,9 +61,12 @@ router.post("/", upload.single("file"), (req, res) => {
   }
 
 
-  // Replace backslashes with forward slashes for URL path compatibility
+  // Replace backslashes with forward slashes for URL path compatibility and ensure the generated URL works behind proxies like Render.
   const webPath = relativePath.split(path.sep).join("/");
-  const fileUrl = `${req.protocol}://${req.get("host")}/documents/${webPath}`;
+  const forwardedProto = Array.isArray(req.headers["x-forwarded-proto"]) ? req.headers["x-forwarded-proto"][0] : req.headers["x-forwarded-proto"] || req.protocol;
+  const forwardedHost = Array.isArray(req.headers["x-forwarded-host"]) ? req.headers["x-forwarded-host"][0] : req.headers["x-forwarded-host"] || req.get("host");
+  const baseUrl = `${forwardedProto}://${forwardedHost}`;
+  const fileUrl = `${baseUrl}/documents/${webPath}`;
   res.json({ url: fileUrl });
 });
 

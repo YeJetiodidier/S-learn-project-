@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { sendResetEmail, mapAuthError } from "../firebase/authService";
 import "../auth.css";
 
@@ -8,16 +8,20 @@ function ForgotPassword() {
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage("");
         setError("");
+
+        if (!email.trim() || !email.includes("@")) {
+            setError("Please enter a valid email address.");
+            return;
+        }
+
         setLoading(true);
         try {
             await sendResetEmail(email);
-            setMessage("Password reset email sent! Check your inbox and follow the link to choose a new password.");
+            setMessage("Reset link sent to your email. Please check your inbox.");
         } catch (err) {
             setError(mapAuthError(err));
         } finally {

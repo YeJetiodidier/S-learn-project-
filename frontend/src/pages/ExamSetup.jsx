@@ -1,43 +1,58 @@
 import "./exam.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getTopics, getQuestions } from "../firebase/firestoreService";
+import {
+  getTopics,
+  getQuestions,
+  getPapers,
+  generateSmartExamFromPapers,
+} from "../firebase/firestoreService";
+import { getBackendUrl } from "../utils/backendConfig";
 
-// In-memory AI fallback when the question bank has fewer items than requested.
-const generateFallback = (subject, topic, count) => {
+// Subject-specific fallback built from the actual past-paper metadata.
+const generateFallback = (subject, topic, count, papers = []) => {
+  const sourcePapers = papers.filter((paper) => {
+    const text = [paper.subject, paper.specialty, paper.topic, paper.paper_name, paper.title, paper.name]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return text.includes(subject.toLowerCase()) || text.includes(topic.toLowerCase());
+  });
+
+  const sourceNames = sourcePapers.map((paper) => paper.paper_name || paper.title || paper.name || "past paper");
+  const sourceName = sourceNames[0] || "available past paper";
+  const concepts = sourcePapers
+    .flatMap((paper) => [
+      paper.subject,
+      paper.specialty,
+      paper.topic,
+      paper.paper_name,
+      paper.title,
+      paper.name,
+    ])
+    .filter(Boolean)
+    .map((value) => String(value).trim())
+    .filter((value, index, values) => values.indexOf(value) === index);
+
   const templates = [
-    {
-      question_text: `Which of the following describes a key fundamental concept of ${topic} in ${subject}?`,
-      options: [
-        `A validated model defining ${topic} interactions.`,
-        `A secondary option unrelated to the study of ${subject}.`,
-        `An atmospheric reaction that does not involve ${topic}.`,
-        `A mechanical approximation.`,
-      ],
-    },
-    {
-      question_text: `In practical experiments of ${subject}, how is the value of ${topic} typically analysed?`,
-      options: [
-        `By calculating numerical ratios specific to ${topic}.`,
-        `Using static estimates that do not depend on ${topic}.`,
-        `By ignoring the variable representing ${topic}.`,
-        `Through external observations model.`,
-      ],
-    },
-    {
-      question_text: `What is the most common real-world application of ${topic}?`,
-      options: [
-        `Optimizing processes involving ${topic} properties.`,
-        `Replacing it with unrelated chemical elements.`,
-        `Simulating virtual structures without any parameters.`,
-        `None of the above.`,
-      ],
-    },
+    (concept) => `Using the learned pattern from ${sourceName}, explain the main idea of ${concept} in ${subject} and its application to ${topic}.`,
+    (concept) => `In ${subject}, compare the use of ${concept} in ${topic}. Explain the relevant method and justify your answer.`,
+    (concept) => `Based on the past-paper pattern from ${sourceName}, describe how ${concept} relates to ${topic} in ${subject}.`,
+    (concept) => `Analyse the significance of ${concept} in ${subject} for ${topic} and support your answer with an example from the past paper.`,
   ];
+
   const out = [];
   for (let i = 0; i < count; i++) {
-    const t = templates[i % templates.length];
-    out.push({ id: `ai-${i}`, question_text: t.question_text, options: t.options, answer: t.options[0] });
+    const concept = concepts[i % concepts.length] || topic || subject;
+    const template = templates[i % templates.length];
+    const question_text = template(concept);
+    const options = [
+      `A correct application of ${concept} in ${subject} and ${topic}.`,
+      `An unrelated statement that does not use ${concept}.`,
+      `A claim that contradicts the learned ${topic} pattern.`,
+      `A statement that ignores the ${subject} concept of ${concept}.`,
+    ];
+    out.push({ id: `paper-${i}`, question_text, options, answer: options[0] });
   }
   return out;
 };
@@ -52,28 +67,79 @@ const ExamSetup = () => {
 
     // Load topics when a subject is entered
     useEffect(() => {
-        if (!subject) {
-            setTopics([]);
-            setTopic("");
-            return;
-        }
-        setLoading(true);
+        if (!subject) return;
+        let active = true;
         getTopics(subject)
             .then((data) => {
+                if (!active) return;
                 setTopics(Array.isArray(data) ? data : []);
                 setLoading(false);
             })
             .catch((err) => {
-                console.error("Failed to load topics", err);
+                if (!active) return;
+                console.error("Failed to load topics:", err);
                 setLoading(false);
             });
+        return () => {
+            active = false;
+        };
     }, [subject]);
 
     const buildExam = async (subj, top, cnt) => {
-        const fetched = await getQuestions(subj, top, Number(cnt));
-        if (fetched.length >= Number(cnt)) return fetched;
-        // Pad with AI-generated fallback questions (not persisted).
-        return [...fetched, ...generateFallback(subj, top, Number(cnt) - fetched.length)];
+        const backendUrl = getBackendUrl();
+        const papers = await getPapers();
+
+        if (backendUrl) {
+            try {
+                const response = await fetch(`${backendUrl}/api/exam/generate`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        subject: subj,
+                        topic: top,
+                        count: Number(cnt),
+                        papers: papers.slice(0, 40),
+                    }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (Array.isArray(data?.questions) && data.questions.length) {
+                        return data.questions;
+                    }
+                }
+            } catch (err) {
+                console.warn("Backend exam generation unavailable, falling back locally:", err.message);
+            }
+        } else {
+            console.warn("Render backend is disabled. Using the local paper-generation path.");
+        }
+
+        const [fetched, localPapers] = await Promise.all([
+            getQuestions(subj, top, Number(cnt)),
+            Promise.resolve(papers),
+        ]);
+
+        const smartQuestions = await generateSmartExamFromPapers({
+            subject: subj,
+            topic: top,
+            count: Number(cnt),
+            papers: localPapers,
+        });
+
+        const merged = [...fetched, ...smartQuestions];
+
+        if (merged.length >= Number(cnt)) {
+            return merged.slice(0, Number(cnt));
+        }
+
+        // Pad with subject-specific questions derived from the available past papers.
+        return [
+            ...merged,
+            ...generateFallback(subj, top, Number(cnt) - merged.length, localPapers),
+        ];
     };
 
     const handleStart = async (e) => {
@@ -88,15 +154,15 @@ const ExamSetup = () => {
         }
     };
 
-    // AI generation fallback when no topics are available
+    // Generate a paper-aware exam using the selected topic and the learner's past-paper history.
     const handleAIGenerate = async () => {
         if (!subject || !count) return;
         try {
-            const questions = await buildExam(subject, "AI", count);
+            const questions = await buildExam(subject, topic || "General", count);
             navigate("/exam/run", { state: { questions } });
         } catch (err) {
             console.error(err);
-            alert("Error with AI generation");
+            alert("Error generating exam from past papers");
         }
     };
 
@@ -109,7 +175,13 @@ const ExamSetup = () => {
                     <input
                         type="text"
                         value={subject}
-                        onChange={(e) => setSubject(e.target.value)}
+                        onChange={(e) => {
+                            const nextSubject = e.target.value;
+                            setSubject(nextSubject);
+                            setTopics([]);
+                            setTopic("");
+                            setLoading(Boolean(nextSubject));
+                        }}
                         required
                         className="exam-input"
                     />
@@ -149,7 +221,7 @@ const ExamSetup = () => {
                         Start Exam
                     </button>
                     <button type="button" className="secondary-btn" onClick={handleAIGenerate}>
-                        Generate AI Questions
+                        Generate from Past Papers
                     </button>
                 </div>
             </form>

@@ -124,3 +124,46 @@ body {
         transform: translateY(0);
     }
 }
+
+/* ── DEVICE RESPONSIVENESS ── */
+@media (max-width: 1024px) {
+    .exam-setup,
+    .exam-run,
+    .exam-result {
+        margin: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .exam-setup,
+    .exam-run,
+    .exam-result {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+
+    .exam-title {
+        font-size: 1.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .exam-setup,
+    .exam-run,
+    .exam-result {
+        margin: 0.5rem;
+        padding: 1rem;
+    }
+
+    .exam-title {
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+        width: 100%;
+        margin-left: 0;
+        margin-bottom: 0.5rem;
+    }
+}

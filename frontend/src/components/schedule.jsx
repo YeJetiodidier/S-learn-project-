@@ -7,20 +7,31 @@ import "../App.css";
 function Schedule() {
   const navigate = useNavigate();
 
+  const getStoredSchedule = () => {
+    try {
+      const saved = localStorage.getItem("schedule");
+      if (!saved) return [];
+
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      localStorage.removeItem("schedule");
+      return [];
+    }
+  };
+
   const [subject, setSubject] = useState("");
   const [time, setTime] = useState("");
   const [day, setDay] = useState("");
-  const [schedule, setSchedule] = useState([]);
-
-  // Load saved data
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("schedule"));
-    if (saved) setSchedule(saved);
-  }, []);
+  const [schedule, setSchedule] = useState(getStoredSchedule);
 
   // Save data
   useEffect(() => {
-    localStorage.setItem("schedule", JSON.stringify(schedule));
+    try {
+      localStorage.setItem("schedule", JSON.stringify(schedule));
+    } catch (error) {
+      console.error("Could not save schedule:", error);
+    }
   }, [schedule]);
 
   const addTask = () => {

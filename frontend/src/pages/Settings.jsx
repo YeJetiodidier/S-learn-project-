@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
-import { useSettings } from "../context/SettingsContext.jsx";
+import { applyAppearance } from "../utils/applyAppearance.js";
 import {
   getProfile,
   updateProfile,
@@ -30,7 +30,6 @@ const TABS = [
 
 function Settings() {
   const navigate = useNavigate();
-  const { applyAppearance } = useSettings();
   const [activeTab, setActiveTab] = useState("profile");
   const [saved, setSaved] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -63,7 +62,7 @@ function Settings() {
     if (!uid) return;
     getProfile(uid)
       .then(d => { if (d) setProfile(prev => ({ ...prev, ...d })); })
-      .catch(() => {});
+      .catch(error => console.error("Could not load profile settings:", error));
 
     getSettings(uid)
       .then(d => {
@@ -87,7 +86,7 @@ function Settings() {
           shareStats: d.privacy_share_stats ?? true,
         });
       })
-      .catch(() => {});
+      .catch(error => console.error("Could not load user settings:", error));
   }, [uid]);
 
   const handleAvatarUpload = async (e) => {
@@ -114,7 +113,11 @@ function Settings() {
     if (!uid) return;
     try {
       await updateProfile(uid, profile);
-    } catch {}
+    } catch (error) {
+      console.error("Could not save profile settings:", error);
+      alert("Could not save profile settings. Please try again.");
+      return;
+    }
     flash();
   };
 
@@ -129,7 +132,11 @@ function Settings() {
       });
       // Apply immediately so the user sees the change without a reload
       applyAppearance(appearance);
-    } catch {}
+    } catch (error) {
+      console.error("Could not save appearance settings:", error);
+      alert("Could not save appearance settings. Please try again.");
+      return;
+    }
     flash();
   };
 
@@ -137,7 +144,11 @@ function Settings() {
     if (!uid) return;
     try {
       await updateSettings(uid, notifs);
-    } catch {}
+    } catch (error) {
+      console.error("Could not save notification settings:", error);
+      alert("Could not save notification settings. Please try again.");
+      return;
+    }
     flash();
   };
 
@@ -145,7 +156,11 @@ function Settings() {
     if (!uid) return;
     try {
       await updateSettings(uid, privacy);
-    } catch {}
+    } catch (error) {
+      console.error("Could not save privacy settings:", error);
+      alert("Could not save privacy settings. Please try again.");
+      return;
+    }
     flash();
   };
 
@@ -180,15 +195,20 @@ function Settings() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       alert("Data exported successfully");
-    } catch {
-      alert("Error exporting data");
+    } catch (error) {
+      console.error("Could not export account data:", error);
+      alert("Could not export account data. Please try again.");
     }
   };
 
   const handleSignOut = async () => {
     try {
       await logoutUser();
-    } catch {}
+    } catch (error) {
+      console.error("Could not sign out:", error);
+      alert(mapAuthError(error));
+      return;
+    }
     navigate("/login");
   };
 

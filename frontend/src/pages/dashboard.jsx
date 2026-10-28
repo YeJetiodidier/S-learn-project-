@@ -2,7 +2,7 @@ import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { getProfile } from "../firebase/firestoreService";
-import { getCurrentUser, logoutUser } from "../firebase/authService";
+import { getCurrentUser } from "../firebase/authService";
 import "../dashboard.css";
 
 const subjectCards = [
@@ -129,21 +129,6 @@ function Dashboard() {
   const stats = [
     { label: "Lessons Completed", value: profile.lessons_completed },
     { label: "Topics Studied", value: profile.topics_studied },
-  ];
-
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-    } catch {}
-    navigate("/login");
-  };
-
-  const navItems = [
-    { icon: "🏠", label: "Dashboard", action: () => navigate("/dashboard"), active: location.pathname === "/dashboard" },
-    { icon: "📚", label: "Smart Subjects", action: () => navigate("/smartsubjects"), active: location.pathname.startsWith("/smartsubjects") },
-    { icon: "📅", label: "Schedule", action: () => navigate("/schedule"), active: location.pathname === "/schedule" },
-    { icon: "⚙️", label: "Settings", action: () => navigate("/settings"), active: location.pathname === "/settings" },
-    { icon: "🚪", label: "Log Out", action: handleLogout },
   ];
 
   return (
