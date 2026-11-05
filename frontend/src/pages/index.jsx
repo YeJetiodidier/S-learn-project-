@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser, loginWithGoogle, loginWithFacebook, mapAuthError } from "../firebase/authService";
-import "../auth.css"; // Using new styling
+import "../auth.css";
 
 function Login() {
   const navigate = useNavigate();

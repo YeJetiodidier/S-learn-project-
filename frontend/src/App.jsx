@@ -1,13 +1,13 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import RegisterPage from "./pages/registerpage.jsx";
 import Dashboard from "./pages/dashboard";
-import Login from "./components/index";
+import Login from "./pages/index";
 import Schedule from "./components/schedule";
 import SmartSubjects from "./pages/SmartSubjects";
 import ScienceLab from "./pages/ScienceLab";
 import Settings from "./pages/Settings";
-import LoadingScreen from "./pages/LoadingScreen";
+import LoadingScreen, { LoadingIndicator } from "./pages/LoadingScreen";
 import ForgotPassword from "./pages/ForgotPassword";
 import ExamSetup from "./pages/ExamSetup";
 import ExamRun from "./pages/ExamRun";
@@ -23,7 +23,7 @@ function RequireAuth({ children }) {
     const unsub = onAuthChange((user) => setState({ loading: false, user }));
     return () => unsub();
   }, []);
-  if (state.loading) return <div style={{ padding: 40 }}>Loading…</div>;
+  if (state.loading) return <LoadingIndicator message="Checking your account…" />;
   if (!state.user) return <Navigate to="/login" replace />;
   return children;
 }
@@ -32,7 +32,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/loading" replace />} />
+        <Route path="/" element={<Login />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
